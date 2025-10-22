@@ -1,0 +1,98 @@
+//
+//  ContentView.swift
+//  CoinApp
+//
+//  Created by Mohammad on 10/21/25.
+//
+
+import SwiftUI
+import Data
+import Domain
+import Core
+
+// MARK: - Views
+public struct CoinListView: View {
+    @StateObject private var viewModel: CoinListViewModel
+    @State private var showLastUpdated = false
+    
+    public init(viewModel: CoinListViewModel? = nil) {
+        _viewModel = StateObject(wrappedValue: viewModel ?? DIContainer.shared.makeCoinListViewModel())
+    }
+    
+    public var body: some View {
+        NavigationView {
+            ZStack {
+                if viewModel.coins.isEmpty && viewModel.isLoading {
+                    ProgressView("Loading coins...")
+                } else {
+                    List {
+                        if let lastUpdated = viewModel.lastUpdated {
+                            Section {
+                                HStack {
+                                    Image(systemName: "clock")
+                                    Text("Last updated: \(lastUpdated, style: .relative) ago")
+                                    Spacer()
+                                    if !viewModel.isConnected {
+                                        Image(systemName: "wifi.slash")
+                                            .foregroundColor(.orange)
+                                    }
+                                }
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        ForEach(viewModel.coins) { coin in
+                            CoinRowView(coin: coin)
+                        }
+                    }
+                    .refreshable {
+                        await viewModel.refresh()
+                    }
+                }
+            }
+            .navigationTitle("Cryptocurrencies")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if viewModel.lastUpdated != nil {
+                        Button(action: { showLastUpdated.toggle() }) {
+                            Image(systemName: "clock.arrow.circlepath")
+                        }
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack {
+                        if !viewModel.isConnected {
+                            Image(systemName: "wifi.slash")
+                                .foregroundColor(.orange)
+                                .help("Offline - using cached data")
+                        }
+                        
+                        if viewModel.isLoading {
+                            ProgressView()
+                        }
+                        
+                        Button(action: {
+                            Task {
+                                await viewModel.refresh()
+                            }
+                        }) {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .disabled(viewModel.isLoading)
+                    }
+                }
+            }
+            .alert("Error", isPresented: .constant(viewModel.error != nil)) {
+                Button("OK") { viewModel.clearError() }
+                Button("Retry") { Task { await viewModel.loadCoins() } }
+            } message: {
+                Text(viewModel.error?.errorDescription ?? "Unknown error")
+            }
+        }
+        .task {
+            await viewModel.loadCoins()
+        }
+    }
+}
