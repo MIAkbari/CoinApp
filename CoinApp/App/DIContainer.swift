@@ -13,28 +13,29 @@ import Data
 
 // MARK: - Dependency Injection
 @MainActor
-public final class DIContainer {
-    public static let shared = DIContainer()
+final class DIContainer {
+    
+    static let shared = DIContainer()
     
     private init() {}
     
-    public func makeAPIClient() -> APIClient {
+    func makeAPIClient() -> APIClient {
         APIClient()
     }
     
-    public func makeNetworkMonitor() -> NetworkMonitor {
+    func makeNetworkMonitor() -> NetworkMonitor {
         NetworkMonitor()
     }
     
-    public func makeCoinRemoteDataSource() -> CoinRemoteDataSourceProtocol {
+    func makeCoinRemoteDataSource() -> CoinRemoteDataSourceProtocol {
         CoinRemoteDataSource(apiClient: makeAPIClient())
     }
     
-    public func makeCoinLocalDataSource() -> CoinLocalDataSourceProtocol {
+    func makeCoinLocalDataSource() -> CoinLocalDataSourceProtocol {
         CoinLocalDataSource()
     }
     
-    public func makeCoinRepository() -> CoinRepositoryProtocol {
+    func makeCoinRepository() -> CoinRepositoryProtocol {
         CoinRepository(
             remoteDataSource: makeCoinRemoteDataSource(),
             localDataSource: makeCoinLocalDataSource(),
@@ -42,11 +43,11 @@ public final class DIContainer {
         )
     }
     
-    public func makeFetchCoinsUseCase() -> FetchCoinsUseCase {
+    func makeFetchCoinsUseCase() -> FetchCoinsUseCase {
         FetchCoinsUseCase(repository: makeCoinRepository())
     }
     
-    public func makeCoinListViewModel() -> CoinListViewModel {
+    func makeCoinListViewModel() -> CoinListViewModel {
         CoinListViewModel(
             fetchCoinsUseCase: makeFetchCoinsUseCase(),
             networkMonitor: makeNetworkMonitor()

@@ -11,46 +11,22 @@ import Domain
 import Core
 
 // MARK: - Views
-public struct CoinListView: View {
+struct CoinListView: View {
+    
     @StateObject private var viewModel: CoinListViewModel
     @State private var showLastUpdated = false
     
-    public init(viewModel: CoinListViewModel? = nil) {
+    init(viewModel: CoinListViewModel? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel ?? DIContainer.shared.makeCoinListViewModel())
     }
     
-    public var body: some View {
+    var body: some View {
+        mainView
+    }
+    
+    private var mainView: some View {
         NavigationView {
-            ZStack {
-                if viewModel.coins.isEmpty && viewModel.isLoading {
-                    ProgressView("Loading coins...")
-                } else {
-                    List {
-                        if let lastUpdated = viewModel.lastUpdated {
-                            Section {
-                                HStack {
-                                    Image(systemName: "clock")
-                                    Text("Last updated: \(lastUpdated, style: .relative) ago")
-                                    Spacer()
-                                    if !viewModel.isConnected {
-                                        Image(systemName: "wifi.slash")
-                                            .foregroundColor(.orange)
-                                    }
-                                }
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            }
-                        }
-                        
-                        ForEach(viewModel.coins) { coin in
-                            CoinRowView(coin: coin)
-                        }
-                    }
-                    .refreshable {
-                        await viewModel.refresh()
-                    }
-                }
-            }
+            middleView
             .navigationTitle("Cryptocurrencies")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -94,5 +70,44 @@ public struct CoinListView: View {
         .task {
             await viewModel.loadCoins()
         }
+
     }
+    
+    private var middleView: some View {
+        ZStack {
+            if viewModel.coins.isEmpty && viewModel.isLoading {
+                ProgressView("Loading coins...")
+            } else {
+                List {
+                    if let lastUpdated = viewModel.lastUpdated {
+                        Section {
+                            HStack {
+                                Image(systemName: "clock")
+                                Text("Last updated: \(lastUpdated, style: .relative) ago")
+                                Spacer()
+                                if !viewModel.isConnected {
+                                    Image(systemName: "wifi.slash")
+                                        .foregroundColor(.orange)
+                                }
+                            }
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    ForEach(viewModel.coins) { coin in
+                        CoinRowView(coin: coin)
+                    }
+                }
+                .refreshable {
+                    await viewModel.refresh()
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+ 
+    CoinListView()
 }

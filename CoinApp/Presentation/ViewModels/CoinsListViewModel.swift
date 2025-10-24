@@ -14,7 +14,9 @@ import OSLog
 
 // MARK: - Presentation Layer
 @MainActor
-public final class CoinListViewModel: ObservableObject {
+final class CoinListViewModel: ObservableObject {
+    
+    // MARK: Properties
     @Published public private(set) var coins: [Coin] = []
     @Published public private(set) var isLoading = false
     @Published public private(set) var error: NetworkError?
@@ -29,7 +31,9 @@ public final class CoinListViewModel: ObservableObject {
     private var isAutoRefreshEnabled = true
     private var previousConnectionState = true
     
-    public init(
+    // MARK: INIT
+    
+    init(
         fetchCoinsUseCase: FetchCoinsUseCase,
         networkMonitor: NetworkMonitor
     ) {
@@ -38,7 +42,7 @@ public final class CoinListViewModel: ObservableObject {
         setupNetworkMonitoring()
     }
     
-    public func loadCoins(forceRefresh: Bool = false) async {
+    func loadCoins(forceRefresh: Bool = false) async {
         guard !isLoading else { return }
         
         isLoading = true
@@ -62,15 +66,15 @@ public final class CoinListViewModel: ObservableObject {
         }
     }
     
-    public func refresh() async {
+    func refresh() async {
         await loadCoins(forceRefresh: true)
     }
     
-    public func clearError() {
+    func clearError() {
         error = nil
     }
     
-    public func setAutoRefreshEnabled(_ enabled: Bool) {
+    func setAutoRefreshEnabled(_ enabled: Bool) {
         isAutoRefreshEnabled = enabled
     }
     
@@ -130,6 +134,19 @@ public final class CoinListViewModel: ObservableObject {
     @MainActor
     private func handleDisconnection() {
         print("📡 Internet connection lost")
+        
+        setAutoRefreshEnabled(false)
+        
+        if !coins.isEmpty {
+            error = .noInternetConnection
+        }
+        
+        if coins.isEmpty {
+            error = .noInternetConnection
+            
+            isLoading = false
+        }
+        previousConnectionState = false
     }
     
     deinit {
