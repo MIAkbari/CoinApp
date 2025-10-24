@@ -13,7 +13,7 @@ import Core
 // MARK: - Views
 struct CoinListView: View {
      
-    
+    // MARK: Peroperties
     
     @StateObject private var viewModel: CoinListViewModel
     @State private var showLastUpdated = false
@@ -22,9 +22,12 @@ struct CoinListView: View {
         _viewModel = StateObject(wrappedValue: viewModel ?? DIContainer.shared.makeCoinListViewModel())
     }
     
+    // MARK: BODY
     var body: some View {
         mainView
     }
+    
+    // MARK: Wrapped View
     
     private var mainView: some View {
         NavigationView {
