@@ -19,6 +19,10 @@ public final class FetchCoinsUseCase: Sendable {
         try await repository.fetchCoins(forceRefresh: forceRefresh)
     }
     
+    public func executDetails(forceRefresh: Bool = false) async throws -> [Coin] {
+        try await repository.fetchDetails(forceRefresh: forceRefresh)
+    }
+    
     //  auto-refresh
     public func executeAutoRefresh() async throws -> [Coin]? {
         try await repository.refreshCoins()

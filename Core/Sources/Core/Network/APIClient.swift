@@ -29,8 +29,8 @@ public actor APIClient {
         self.jsonDecoder.dateDecodingStrategy = .iso8601
         
         let sessionConfig = URLSessionConfiguration.ephemeral
-        sessionConfig.timeoutIntervalForRequest = 30
-        sessionConfig.timeoutIntervalForResource = 60
+        sessionConfig.timeoutIntervalForRequest = 15
+        sessionConfig.timeoutIntervalForResource = 15
         sessionConfig.waitsForConnectivity = true
         sessionConfig.httpMaximumConnectionsPerHost = 4
         

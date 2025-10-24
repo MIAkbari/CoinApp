@@ -12,6 +12,8 @@ import Core
 
 // MARK: - Views
 struct CoinListView: View {
+     
+    
     
     @StateObject private var viewModel: CoinListViewModel
     @State private var showLastUpdated = false
@@ -29,36 +31,7 @@ struct CoinListView: View {
             middleView
             .navigationTitle("Cryptocurrencies")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if viewModel.lastUpdated != nil {
-                        Button(action: { showLastUpdated.toggle() }) {
-                            Image(systemName: "clock.arrow.circlepath")
-                        }
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack {
-                        if !viewModel.isConnected {
-                            Image(systemName: "wifi.slash")
-                                .foregroundColor(.orange)
-                                .help("Offline - using cached data")
-                        }
-                        
-                        if viewModel.isLoading {
-                            ProgressView()
-                        }
-                        
-                        Button(action: {
-                            Task {
-                                await viewModel.refresh()
-                            }
-                        }) {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                        .disabled(viewModel.isLoading)
-                    }
-                }
+                toolbarItem
             }
             .alert("Error", isPresented: .constant(viewModel.error != nil)) {
                 Button("OK") { viewModel.clearError() }
@@ -69,6 +42,7 @@ struct CoinListView: View {
         }
         .task {
             await viewModel.loadCoins()
+//            await viewModel.fetchDetails()
         }
 
     }
@@ -76,32 +50,74 @@ struct CoinListView: View {
     private var middleView: some View {
         ZStack {
             if viewModel.coins.isEmpty && viewModel.isLoading {
-                ProgressView("Loading coins...")
+                progressView
             } else {
-                List {
-                    if let lastUpdated = viewModel.lastUpdated {
-                        Section {
-                            HStack {
-                                Image(systemName: "clock")
-                                Text("Last updated: \(lastUpdated, style: .relative) ago")
-                                Spacer()
-                                if !viewModel.isConnected {
-                                    Image(systemName: "wifi.slash")
-                                        .foregroundColor(.orange)
-                                }
-                            }
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                coinListView
+            }
+        }
+    }
+    
+    private var progressView: some View {
+        ProgressView("Loading coins...")
+    }
+    
+    private var coinListView: some View {
+        List {
+            if let lastUpdated = viewModel.lastUpdated {
+                Section {
+                    HStack {
+                        Image(systemName: "clock")
+                        Text("Last updated: \(lastUpdated, style: .relative) ago")
+                        Spacer()
+                        if !viewModel.isConnected {
+                            Image(systemName: "wifi.slash")
+                                .foregroundColor(.orange)
                         }
                     }
-                    
-                    ForEach(viewModel.coins) { coin in
-                        CoinRowView(coin: coin)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                }
+            }
+            
+            ForEach(viewModel.coins, id: \.id) { coin in
+                CoinRowView(coin: coin)
+            }
+        }
+        .refreshable {
+            await viewModel.refresh()
+        }
+    }
+    
+    @ToolbarContentBuilder
+    private var toolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
+            if viewModel.lastUpdated != nil {
+                Button(action: { showLastUpdated.toggle() }) {
+                    Image(systemName: "clock.arrow.circlepath")
+                }
+            }
+        }
+        
+        ToolbarItem(placement: .navigationBarTrailing) {
+            HStack {
+                if !viewModel.isConnected {
+                    Image(systemName: "wifi.slash")
+                        .foregroundColor(.orange)
+                        .help("Offline - using cached data")
+                }
+                
+                if viewModel.isLoading {
+                    ProgressView()
+                }
+                
+                Button(action: {
+                    Task {
+                        await viewModel.refresh()
                     }
+                }) {
+                    Image(systemName: "arrow.clockwise")
                 }
-                .refreshable {
-                    await viewModel.refresh()
-                }
+                .disabled(viewModel.isLoading)
             }
         }
     }

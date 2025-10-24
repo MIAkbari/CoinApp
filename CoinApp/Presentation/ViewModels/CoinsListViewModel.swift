@@ -42,7 +42,7 @@ final class CoinListViewModel: ObservableObject {
         setupNetworkMonitoring()
     }
     
-    func loadCoins(forceRefresh: Bool = false) async {
+   func loadCoins(forceRefresh: Bool = false) async {
         guard !isLoading else { return }
         
         isLoading = true
@@ -66,8 +66,35 @@ final class CoinListViewModel: ObservableObject {
         }
     }
     
+   private func loadDetailsCoind(forceRefresh: Bool = false) async {
+        guard !isLoading else { return }
+        
+        isLoading = true
+        var loadError: NetworkError?
+        
+        do {
+            let fetchedCoins = try await fetchCoinsUseCase.executDetails(forceRefresh: forceRefresh)
+            await MainActor.run {
+                self.coins = fetchedCoins
+            }
+        } catch let networkError as NetworkError {
+            loadError = networkError
+        } catch {
+            loadError = .unknown(error)
+        }
+        
+        await MainActor.run {
+            self.error = loadError
+            self.isLoading = false
+        }
+    }
+    
     func refresh() async {
         await loadCoins(forceRefresh: true)
+    }
+    
+    func fetchDetails() async {
+        await loadDetailsCoind(forceRefresh: true)
     }
     
     func clearError() {
@@ -135,19 +162,29 @@ final class CoinListViewModel: ObservableObject {
     private func handleDisconnection() {
         print("📡 Internet connection lost")
         
+        isConnected = false
+        error = .noInternetConnection
         setAutoRefreshEnabled(false)
         
-        if !coins.isEmpty {
-            error = .noInternetConnection
-        }
-        
-        if coins.isEmpty {
-            error = .noInternetConnection
+        Task {
+            var delay: Double = 1
             
-            isLoading = false
+            while !isConnected {
+                print("⏳ Retrying in \(delay) seconds…")
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                
+                if networkMonitor.isConnected {
+                    print("✅ Network restored during retry loop")
+                    handleReconnection()
+                    break
+                }
+                
+                // exponential-backoff
+                delay = min(delay * 2, 30)
+            }
         }
-        previousConnectionState = false
     }
+    
     
     deinit {
         monitoringTask?.cancel()

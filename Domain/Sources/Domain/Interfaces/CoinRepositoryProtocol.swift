@@ -11,6 +11,7 @@ import Foundation
 // MARK: - Repository
 public protocol CoinRepositoryProtocol: Sendable {
     func fetchCoins(forceRefresh: Bool) async throws -> [Coin]
+    func fetchDetails(forceRefresh: Bool) async throws -> [Coin]
     func getCachedCoins() async throws -> [Coin]
     func refreshCoins() async throws -> [Coin]
     func autoRefreshOnReconnection() async throws -> [Coin]?

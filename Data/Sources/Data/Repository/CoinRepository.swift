@@ -15,30 +15,6 @@ public final class CoinRepository: CoinRepositoryProtocol, Sendable {
     private let remoteDataSource: CoinRemoteDataSourceProtocol
     private let localDataSource: CoinLocalDataSourceProtocol
     private let networkMonitor: NetworkMonitor
-    
-    private actor State {
-        var lastRefreshTime: Date?
-        let cacheValidityInterval: TimeInterval = 300
-        
-        func updateLastRefreshTime() {
-            lastRefreshTime = Date()
-        }
-        
-        func shouldRefreshFromNetwork() -> Bool {
-            guard let lastRefresh = lastRefreshTime else { return true }
-            return Date().timeIntervalSince(lastRefresh) > cacheValidityInterval
-        }
-        
-        // ✅ for limit of await
-        func getRefreshDecision(forceRefresh: Bool) -> Bool {
-            if forceRefresh {
-                return true
-            }
-            guard let lastRefresh = lastRefreshTime else { return true }
-            return Date().timeIntervalSince(lastRefresh) > cacheValidityInterval
-        }
-    }
-    
     private let state = State()
     
     public init(
@@ -91,6 +67,15 @@ public final class CoinRepository: CoinRepositoryProtocol, Sendable {
         }
     }
     
+    public func fetchDetails(forceRefresh: Bool) async throws -> [Coin] {
+        do {
+            let dtos = try await remoteDataSource.fetchDetils()
+            return dtos.map(CoinMapper.toDomain)
+        } catch {
+            throw error
+        }
+    }
+    
     public func autoRefreshOnReconnection() async throws -> [Coin]? {
         let connectionStatus = await networkMonitor.connectionStatus
         let shouldRefresh = await state.shouldRefreshFromNetwork()
@@ -102,3 +87,25 @@ public final class CoinRepository: CoinRepositoryProtocol, Sendable {
     }
 }
 
+private actor State {
+    var lastRefreshTime: Date?
+    let cacheValidityInterval: TimeInterval = 300
+    
+    func updateLastRefreshTime() {
+        lastRefreshTime = Date()
+    }
+    
+    func shouldRefreshFromNetwork() -> Bool {
+        guard let lastRefresh = lastRefreshTime else { return true }
+        return Date().timeIntervalSince(lastRefresh) > cacheValidityInterval
+    }
+    
+    // ✅ for limit of await
+    func getRefreshDecision(forceRefresh: Bool) -> Bool {
+        if forceRefresh {
+            return true
+        }
+        guard let lastRefresh = lastRefreshTime else { return true }
+        return Date().timeIntervalSince(lastRefresh) > cacheValidityInterval
+    }
+}
