@@ -17,6 +17,7 @@ struct CoinListView: View {
     
     @StateObject private var viewModel: CoinListViewModel
     @State private var showLastUpdated = false
+    @State private var searchingText: String = ""
     
     init(viewModel: CoinListViewModel? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel ?? DIContainer.shared.makeCoinListViewModel())
@@ -60,6 +61,11 @@ struct CoinListView: View {
         }
     }
     
+    private var textFeildSearch: some View {
+        TextField("Searching coin", text: $viewModel.searchText)
+            .dynamicTypeSize(.xSmall ... .xxLarge)
+    }
+    
     private var progressView: some View {
         ProgressView("Loading coins...")
     }
@@ -67,6 +73,9 @@ struct CoinListView: View {
     private var coinListView: some View {
         List {
             if let lastUpdated = viewModel.lastUpdated {
+                Section {
+                    textFeildSearch
+                }
                 Section {
                     HStack {
                         Image(systemName: "clock")
@@ -82,7 +91,7 @@ struct CoinListView: View {
                 }
             }
             
-            ForEach(viewModel.coins, id: \.id) { coin in
+            ForEach(viewModel.searchText.isEmpty ? viewModel.coins : viewModel.filterCoins, id: \.id) { coin in
                 CoinRowView(coin: coin)
             }
         }
@@ -126,7 +135,7 @@ struct CoinListView: View {
     }
 }
 
-#Preview {
- 
+#Preview("coinapp") {
+    
     CoinListView()
 }

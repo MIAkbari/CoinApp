@@ -10,7 +10,6 @@ import Combine
 import Domain
 import Core
 import Data
-import OSLog
 
 // MARK: - Presentation Layer
 @MainActor
@@ -23,6 +22,13 @@ final class CoinListViewModel: ObservableObject {
     @Published public private(set) var isConnected = true
     @Published public private(set) var connectionType: NetworkMonitor.ConnectionType = .unknown
     @Published public private(set) var lastUpdated: Date?
+    @Published var searchText: String = ""
+    var filterCoins: [Coin] {
+        if searchText.isEmpty {
+            return coins
+        }
+        return coins.filter { $0.name.localizedCaseInsensitiveContains(searchText)}
+    }
     
     private let fetchCoinsUseCase: FetchCoinsUseCase
     private let networkMonitor: NetworkMonitor
@@ -184,7 +190,6 @@ final class CoinListViewModel: ObservableObject {
             }
         }
     }
-    
     
     deinit {
         monitoringTask?.cancel()
