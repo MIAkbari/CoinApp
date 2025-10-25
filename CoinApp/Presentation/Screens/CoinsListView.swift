@@ -17,7 +17,6 @@ struct CoinListView: View {
     
     @StateObject private var viewModel: CoinListViewModel
     @State private var showLastUpdated = false
-    @State private var searchingText: String = ""
     
     init(viewModel: CoinListViewModel? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel ?? DIContainer.shared.makeCoinListViewModel())
@@ -91,7 +90,7 @@ struct CoinListView: View {
                 }
             }
             
-            ForEach(viewModel.searchText.isEmpty ? viewModel.coins : viewModel.filterCoins, id: \.id) { coin in
+            ForEach(viewModel.filterCoins, id: \.id) { coin in
                 CoinRowView(coin: coin)
             }
         }
